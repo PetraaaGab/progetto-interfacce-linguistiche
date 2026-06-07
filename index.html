@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+</head>
+<body>
+<div class="page">
+
+  <!-- ====== HEADER ====== -->
+  <header class="site-header">
+    <h1>Poetry Generator</h1>
+    <p class="subtitle">Un piccolo LM che impara dai poeti e scrive per te</p>
+  </header>
+
+  <!-- ====== SEZIONE 1: SETUP ====== -->
+  <div class="section">
+    <div class="section-title">1 — Setup</div>
+
+    <label for="api-key">HuggingFace Token</label>
+    <input type="password" id="api-key" placeholder="hf_..." />
+
+    <button class="btn" id="btn-train" onclick="doTrain()">
+      Carica Dataset
+    </button>
+
+    <div class="status-bar" id="status-train">In attesa del caricamento…</div>
+  </div>
+
+  <!-- ====== SEZIONE 2: GENERA ====== -->
+  <div class="section">
+    <div class="section-title">2 — Genera una Poesia</div>
+
+    <label for="theme">Tema (opzionale)</label>
+    <input type="text" id="theme" placeholder="es. love, nature, death, time…" />
+
+    <div class="row">
+      <div>
+        <label for="style">Stile</label>
+        <select id="style">
+          <option value="verso libero">Verso libero</option>
+          <option value="sonnet">Sonetto</option>
+          <option value="haiku">Haiku</option>
+          <option value="ode">Ode</option>
+          <option value="elegy">Elegia</option>
+          <option value="ballad">Ballata</option>
+        </select>
+      </div>
+      <div>
+        <label for="length">Lunghezza</label>
+        <select id="length">
+          <option value="short">Breve (4–8 versi)</option>
+          <option value="medium" selected>Media (10–16 versi)</option>
+          <option value="long">Lunga (20+ versi)</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-generate" onclick="doGenerate()" disabled>
+      Genera Poesia
+    </button>
+
+    <div class="status-bar" id="status-generate"></div>
+  </div>
+
+  <!-- ====== OUTPUT ====== -->
+  <div class="poem-section" id="poem-section">
+    <div class="spinner" id="spinner"></div>
+
+    <div class="poem-card" id="poem-card" style="display:none">
+      <div class="poem-text" id="poem-text"></div>
+      <div class="poem-meta" id="poem-meta"></div>
+      <button class="btn copy-btn" onclick="copyPoem()">Copia</button>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// -----------------------------------------------------------------------
+// Stato locale (oggetto semplice, nessun framework)
+// -----------------------------------------------------------------------
+var state = {
+  trained: false,
+  loading: false,
+};
+
+// -----------------------------------------------------------------------
+// Helpers UI
+// -----------------------------------------------------------------------
+function setStatus(id, msg, type) {
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status-bar ' + (type || '');
+}
+
+function setLoading(on) {
+  state.loading = on;
+  document.getElementById('btn-train').disabled = on;
+  document.getElementById('btn-generate').disabled = on || !state.trained;
+  document.getElementById('spinner').className = on ? 'spinner active' : 'spinner';
+  document.getElementById('poem-card').style.display = on ? 'none' : '';
+}
+
+// -----------------------------------------------------------------------
+// /train — carica il dataset
+// -----------------------------------------------------------------------
+async function doTrain() {
+  var apiKey = document.getElementById('api-key').value.trim();
+  if (!apiKey) {
+    setStatus('status-train', 'Inserisci la tua Anthropic API Key.', 'err');
+    return;
+  }
+
+  setStatus('status-train', 'Caricamento dataset HuggingFace…');
+  setLoading(true);
+  document.getElementById('poem-section').classList.remove('visible');
+
+  try {
+    var resp = await fetch('/train', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ api_key: apiKey })
+    });
+    var data = await resp.json();
+
+    if (!resp.ok) {
+      throw new Error(data.detail || 'Errore sconosciuto');
+    }
+
+    state.trained = true;
+    setStatus('status-train',
+      '✓ Dataset caricato: ' + data.count + ' poesie. Temi: ' + data.themes.slice(0,5).join(', ') + '…',
+      'ok'
+    );
+  } catch(e) {
+    setStatus('status-train', '✗ Errore: ' + e.message, 'err');
+  }
+
+  setLoading(false);
+}
+
+// -----------------------------------------------------------------------
+// /generate — genera la poesia
+// -----------------------------------------------------------------------
+async function doGenerate() {
+  if (!state.trained) {
+    setStatus('status-generate', 'Prima carica il dataset.', 'err');
+    return;
+  }
+
+  var theme  = document.getElementById('theme').value.trim();
+  var style  = document.getElementById('style').value;
+  var length = document.getElementById('length').value;
+
+  setStatus('status-generate', 'Generazione in corso…');
+  setLoading(true);
+  document.getElementById('poem-section').classList.add('visible');
+  document.getElementById('poem-card').style.display = 'none';
+
+  try {
+    var resp = await fetch('/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ theme: theme, style: style, length: length })
+    });
+    var data = await resp.json();
+
+    if (!resp.ok) {
+      throw new Error(data.detail || 'Errore sconosciuto');
+    }
+
+    document.getElementById('poem-text').textContent = data.poem;
+    document.getElementById('poem-meta').textContent =
+      'Tema: ' + (theme || 'libero') + ' · Stile: ' + style +
+      ' · Esempi usati: ' + data.samples_used;
+    document.getElementById('poem-card').style.display = 'block';
+    setStatus('status-generate', '✓ Poesia generata.', 'ok');
+
+  } catch(e) {
+    setStatus('status-generate', '✗ Errore: ' + e.message, 'err');
+    document.getElementById('poem-section').classList.remove('visible');
+  }
+
+  setLoading(false);
+}
+
+// -----------------------------------------------------------------------
+// Copia negli appunti
+// -----------------------------------------------------------------------
+function copyPoem() {
+  var text = document.getElementById('poem-text').textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    setStatus('status-generate', '✓ Poesia copiata negli appunti.', 'ok');
+  });
+}
+</script>
+</body>
+</html>

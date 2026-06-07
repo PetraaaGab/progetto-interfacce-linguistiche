@@ -1,0 +1,223 @@
+/* main.css — stile per il Poetry Generator */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Text:ital@0;1&display=swap');
+
+:root {
+  --bg:         #0f0e0b;
+  --surface:    #1a1814;
+  --border:     #3a342a;
+  --gold:       #c9a84c;
+  --gold-light: #e8cc87;
+  --text:       #e8e0d0;
+  --muted:      #8a7e6e;
+  --ink:        #f5f0e8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 18px;
+  min-height: 100vh;
+  line-height: 1.7;
+}
+
+/* ---------- layout ---------- */
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+/* ---------- header ---------- */
+.site-header {
+  text-align: center;
+  margin-bottom: 56px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+}
+
+.site-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: 0.02em;
+}
+
+.site-header .subtitle {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 1rem;
+  margin-top: 6px;
+}
+
+/* ---------- setup section ---------- */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 28px 32px;
+  margin-bottom: 28px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  margin-bottom: 20px;
+}
+
+/* ---------- form controls ---------- */
+label {
+  display: block;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+input[type="text"],
+input[type="password"],
+select,
+textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text);
+  font-family: 'Crimson Text', serif;
+  font-size: 1rem;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--gold);
+}
+
+select option { background: var(--surface); }
+
+.row { display: flex; gap: 20px; }
+.row > * { flex: 1; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-block;
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  padding: 12px 30px;
+  border: 1px solid var(--gold);
+  background: transparent;
+  color: var(--gold);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  border-radius: 2px;
+}
+
+.btn:hover { background: var(--gold); color: var(--bg); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--gold);
+  color: var(--bg);
+  width: 100%;
+  text-align: center;
+  font-size: 1.05rem;
+  padding: 14px;
+}
+.btn-primary:hover { background: var(--gold-light); border-color: var(--gold-light); }
+
+/* ---------- status bar ---------- */
+.status-bar {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-style: italic;
+  padding: 8px 0 0;
+  min-height: 24px;
+}
+.status-bar.ok  { color: #7aab6e; }
+.status-bar.err { color: #c96b6b; }
+
+/* ---------- poem output ---------- */
+.poem-section {
+  margin-top: 36px;
+  display: none;
+}
+
+.poem-section.visible { display: block; }
+
+.poem-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  padding: 36px 40px;
+  position: relative;
+}
+
+.poem-card::before {
+  content: '\201C';
+  font-family: 'Playfair Display', serif;
+  font-size: 5rem;
+  color: var(--gold);
+  opacity: 0.18;
+  position: absolute;
+  top: 8px;
+  left: 18px;
+  line-height: 1;
+}
+
+.poem-text {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1.85;
+  color: var(--ink);
+  white-space: pre-wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.poem-meta {
+  margin-top: 20px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- loading spinner ---------- */
+.spinner {
+  display: none;
+  width: 22px; height: 22px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+.spinner.active { display: block; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- copy button ---------- */
+.copy-btn {
+  margin-top: 14px;
+  font-size: 0.8rem;
+  padding: 6px 16px;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 600px) {
+  .section { padding: 20px 18px; }
+  .poem-card { padding: 24px 20px; }
+  .row { flex-direction: column; gap: 0; }
+}
